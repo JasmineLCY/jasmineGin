@@ -1,31 +1,54 @@
 package gee
 
 import (
+	"fmt"
 	"net/http"
 )
 
 type HandlerFunc func(c *Context)
 
+type RouterGroup struct {
+	prefix      string
+	middlewares []HandlerFunc
+	parent      *RouterGroup
+	engine      *Engine
+}
+
 type Engine struct {
+	*RouterGroup
 	router *router
+	groups []*RouterGroup
 }
 
 func New() *Engine {
-	return &Engine{
-		router: newRouter(),
+	engine := &Engine{router: newRouter()}
+	engine.RouterGroup = &RouterGroup{engine: engine}
+	engine.groups = []*RouterGroup{engine.RouterGroup}
+	return engine
+}
+
+func (group *RouterGroup) Group(prefix string) *RouterGroup {
+	engine := group.engine
+	newGroup := &RouterGroup{
+		prefix: group.prefix + prefix,
+		parent: group,
+		engine: engine,
 	}
+	engine.groups = append(engine.groups, newGroup)
+	return newGroup
 }
 
-func (engine *Engine) addRouter(method string, path string, handler HandlerFunc) {
-	engine.router.addRouter(method, path, handler)
+func (group *RouterGroup) addRouter(method string, comp string, handler HandlerFunc) {
+	path := group.prefix + comp
+	group.engine.router.addRouter(method, path, handler)
 }
 
-func (engine *Engine) GET(path string, handler HandlerFunc) {
-	engine.addRouter("GET", path, handler)
+func (group *RouterGroup) GET(pattern string, handler HandlerFunc) {
+	group.addRouter("GET", pattern, handler)
 }
 
-func (engine *Engine) POST(path string, handler HandlerFunc) {
-	engine.addRouter("POST", path, handler)
+func (group *RouterGroup) POST(pattern string, handler HandlerFunc) {
+	group.addRouter("POST", pattern, handler)
 }
 
 func (engine *Engine) Run(addr string) error {
