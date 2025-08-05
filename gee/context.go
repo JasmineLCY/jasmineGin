@@ -11,7 +11,7 @@ type H map[string]interface{}
 type Context struct {
 	Writer http.ResponseWriter
 	Req    *http.Request
-
+	Params map[string]string
 	Path   string
 	Method string
 
@@ -25,6 +25,11 @@ func newContext(w http.ResponseWriter, req *http.Request) *Context {
 		Path:   req.URL.Path,
 		Method: req.Method,
 	}
+}
+
+func (c *Context) Param(key string) string {
+	value, _ := c.Params[key]
+	return value
 }
 
 func (c *Context) PostForm(key string) string {

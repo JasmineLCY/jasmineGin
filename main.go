@@ -2,23 +2,28 @@ package main
 
 import (
 	"gee"
+	"net/http"
 )
 
 func main() {
 	r := gee.New()
 
 	r.GET("/", func(c *gee.Context) {
-		c.HTML(200, "<h1>hello gee</h1>")
+		c.HTML(http.StatusOK, "<h1>Hello jasmine lee</h1>")
 	})
 
 	r.GET("/hello", func(c *gee.Context) {
-		c.String(200, "hello %s", c.Query("name"))
+		// expect /hello?name=jasmine
+		c.String(http.StatusOK, "hello %s, you're at %s\n", c.Query("name"), c.Path)
 	})
-	r.POST("/login", func(c *gee.Context) {
-		c.JSON(200, gee.H{
-			"name":     c.PostForm("name"),
-			"password": c.PostForm("password"),
-		})
+
+	r.GET("/hello/:name", func(c *gee.Context) {
+		// expect /hello/jasmine
+		c.String(http.StatusOK, "hello %s, you're at %s\n", c.Param("name"), c.Path)
+	})
+
+	r.GET("/assets/*filepath", func(c *gee.Context) {
+		c.JSON(http.StatusOK, gee.H{"filepath": c.Param("filepath")})
 	})
 	r.Run(":9999")
 }
